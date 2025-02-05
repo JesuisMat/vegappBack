@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const connectionString = 'mongodb+srv://admin:5pChWNoQZYGQBBT3@cluster0.1767x.mongodb.net/vegapp';
+const connectionString = process.env.CONNECTION_STRING;
 
 mongoose.connect(connectionString, { connectTimeoutMS: 2000 })
   .then(() => console.log('Database connected'))

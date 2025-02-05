@@ -1,21 +1,21 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 
-require('../models/connection');
-const User = require('../models/users');
-const { checkBody } = require('../modules/checkBody');
-const uid2 = require('uid2');
-const bcrypt = require('bcrypt');
+require("../models/connection");
+const User = require("../models/users");
+const { checkBody } = require("../modules/checkBody");
+const uid2 = require("uid2");
+const bcrypt = require("bcrypt");
 
 // route pour créér un.e utilisateur.ice
-router.post('/signup', (req, res) => {
+router.post("/signup", (req, res) => {
   // utilisation du module checkBody pour vérifier que tous les champs ont bien été renseignés
-  if (!checkBody(req.body, ['username', 'password'])) {
-    res.json({ result: false, error: 'Missing or empty fields' });
+  if (!checkBody(req.body, ["username", "password"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
   // on regarde si l'utilisateur.ice est déjà en BDD
-  User.findOne({ username: req.body.username }).then(data => {
+  User.findOne({ username: req.body.username }).then((data) => {
     // si c'est pas le cas, on créé user
     if (data === null) {
       // on hashe le password avec bcrypt.hashSync
@@ -29,35 +29,43 @@ router.post('/signup', (req, res) => {
         email: req.body.email,
         favRecipes: [],
         favBuisnesses: [],
-        regime: []
+        regime: [],
       });
       // on le save et on renvoie un json avec le result et le token user
-      newUser.save().then(newDoc => {
+      newUser.save().then((newDoc) => {
         res.json({ result: true, token: newDoc.token });
       });
     } else {
       // si l'utilisateur existe déjà on renvoie un json avec result : false avec message erreur
-      res.json({ result: false, error: 'User already exists' });
+      res.json({ result: false, error: "User already exists" });
     }
   });
 });
 
 // route pour se connecter à son compte utilisateur.ice
-router.post('/signin', (req, res) => {
+router.post("/signin", (req, res) => {
   // utilisation du module checkBody pour vérifier que tous les champs ont bien été renseignés
-  if (!checkBody(req.body, ['username', 'password'])) {
-    res.json({ result: false, error: 'Missing or empty fields' });
+  if (!checkBody(req.body, ["username", "password"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
     return;
   }
   // on regarde si l'utilisateur.ice est déjà en BDD
-  User.findOne({ username: req.body.username }).then(data => {
+  User.findOne({ username: req.body.username }).then((data) => {
     // on compare le mot de passe reçu avec celui enregistré en base de données via la méthode compareSync
     if (data && bcrypt.compareSync(req.body.password, data.password)) {
       // on récupère le token pour le stocker ensuite dans le reducer (le token sert à identifier l'utilisateur, le token peut être regénéré contrairement à l'id)
-      res.json({ result: true, token: data.token });
+      res.json({
+        result: true,
+        token: data.token,
+        email: data.email,
+        username: data.username,
+        favrecipes: data.favRecipes,
+        favshops: data.favBuisnesses,
+        regime: data.regime
+      });
     } else {
       // si mauvais mot de passe on renvoie un json avec result : false avec message erreur
-      res.json({ result: false, error: 'User not found or wrong password' });
+      res.json({ result: false, error: "User not found or wrong password" });
     }
   });
 });

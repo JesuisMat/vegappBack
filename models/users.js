@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Schéma pour les utilisateurs
 const userSchema = mongoose.Schema({
  username : String, 
  password : String,

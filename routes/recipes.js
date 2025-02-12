@@ -31,7 +31,7 @@ router.get('/search', async (req, res) => {
       query.regime = { $all: regimes };
     }
     
-    // Filtre par catégorie de plat (ASIA, HEALTHY, etc.)
+    // Filtre par tag de plats
     if (req.query.category) {
       query.category = req.query.category;
     }
@@ -43,7 +43,7 @@ router.get('/search', async (req, res) => {
     const skip = (page - 1) * limit; // Calcul du nombre de documents à sauter
 
     // On fait la requête à la base de données
-    // select() permet de ne récupérer que les champs dont on a besoin
+    // select() permet de récupérer que les champs dont on a besoin
     const recipes = await Recipe.find(query)
       .skip(skip)
       .limit(limit)
@@ -53,19 +53,18 @@ router.get('/search', async (req, res) => {
     // pour pouvoir calculer le nombre total de pages
     const total = await Recipe.countDocuments(query);
 
-    // On renvoie le résultat
     res.json({ 
       result: true, 
       recipes,
       pagination: {
-        current: page,          // Page actuelle
-        pages: Math.ceil(total / limit), // Nombre total de pages
-        total                   // Nombre total de recettes
+        current: page,           //nb total de pages
+        pages: Math.ceil(total / limit), //Nb total de pages
+        total                   // Nb total de recettes
       }
     });
 
   } catch (error) {
-    // En cas d'erreur, on renvoie l'erreur au front
+    // erreur quon renvoi au front
     res.json({ result: false, error: error.message });
   }
 });

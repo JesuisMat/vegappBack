@@ -63,4 +63,4 @@ const recipeSchema = mongoose.Schema({
 const Recipe = mongoose.model('recipes', recipeSchema);
 const Ingredient = mongoose.model('ingredients', ingredientSchema);
 
-module.exports = { Recipe, Ingredient };
+module.exports = { Recipe, Ingredient }; //

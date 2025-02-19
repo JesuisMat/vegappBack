@@ -99,7 +99,7 @@ router.post('/', async (req, res) => {
 });
 
 // GET /recipes - Récupération de toutes les recettes
-router.get('/', async (req, res) => {
+router.get('/allRecipes', async (req, res) => {
   try {
     // On peut ajouter une limite pour ne pas tout récupérer d'un coup
     const recipes = await Recipe.find()

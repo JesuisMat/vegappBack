@@ -69,30 +69,43 @@ router.get("/search", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    // On crée une nouvelle instance de Recipe avec les données du body
-    const newRecipe = new Recipe({
+    console.log('Received recipe data:', req.body);
+
+    // Validate required fields
+    if (!req.body.title || !req.body.description || !req.body.category) {
+      return res.json({ 
+        result: false, 
+        error: 'Missing required fields' 
+      });
+    }
+
+    // Create recipe without _id field
+    const recipeData = {
       title: req.body.title,
       description: req.body.description,
-      regime: req.body.regime,
-      ingredients: req.body.ingredients,
+      regime: req.body.regime || [],
+      ingredients: req.body.ingredients || [],
       category: req.body.category,
-      difficulty: req.body.difficulty,
-      cost: req.body.cost,
-      duration: req.body.duration,
-      steps: req.body.steps,
-      // Ces valeurs sont initialisées par défaut dans le schéma
-      // averageNote: 0,
-      // voteNr: 0,
-      // shareLinks: []
-    });
+      difficulty: req.body.difficulty || 'MEDIUM',
+      cost: req.body.cost || 0,
+      duration: req.body.duration || 0,
+      steps: req.body.steps || []
+    };
 
-    // On sauvegarde dans la base de données
+    const newRecipe = new Recipe(recipeData);
+    console.log('Created new recipe instance:', newRecipe);
+
     const savedRecipe = await newRecipe.save();
+    console.log('Saved recipe:', savedRecipe);
 
-    // On renvoie la recette créée
     res.json({ result: true, recipe: savedRecipe });
   } catch (error) {
-    res.json({ result: false, error: error.message });
+    console.error('Error saving recipe:', error);
+    res.json({ 
+      result: false, 
+      error: error.message,
+      details: error.stack 
+    });
   }
 });
 

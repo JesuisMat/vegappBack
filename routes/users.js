@@ -70,4 +70,97 @@ router.post("/signin", (req, res) => {
   });
 });
 
+router.post("/bookmark", (req, res) => {
+  // Vérifier que tous les champs requis sont présents
+  if (!checkBody(req.body, ["token", "recipeId"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  // Rechercher l'utilisateur par son token
+  User.findOne({ token: req.body.token }).then((user) => {
+    if (!user) {
+      res.json({ result: false, error: "User not found" });
+      return;
+    }
+
+    // Vérifier si la recette est déjà dans les favoris
+    if (user.favRecipes.includes(req.body.recipeId)) {
+      res.json({ result: false, error: "Recipe already in favorites" });
+      return;
+    }
+
+    // Ajouter la recette aux favoris
+    User.updateOne(
+      { token: req.body.token },
+      { $push: { favRecipes: req.body.recipeId } }
+    ).then(() => {
+      res.json({ result: true, favRecipes: [...user.favRecipes, req.body.recipeId] });
+    });
+  });
+});
+
+// Route pour retirer une recette des favoris
+router.delete("/bookmark", (req, res) => {
+  // Vérifier que tous les champs requis sont présents
+  if (!checkBody(req.body, ["token", "recipeId"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  // Rechercher l'utilisateur par son token
+  User.findOne({ token: req.body.token }).then((user) => {
+    if (!user) {
+      res.json({ result: false, error: "User not found" });
+      return;
+    }
+
+    // Vérifier si la recette est dans les favoris
+    if (!user.favRecipes.includes(req.body.recipeId)) {
+      res.json({ result: false, error: "Recipe not in favorites" });
+      return;
+    }
+
+    // Retirer la recette des favoris
+    User.updateOne(
+      { token: req.body.token },
+      { $pull: { favRecipes: req.body.recipeId } }
+    ).then(() => {
+      const updatedFavRecipes = user.favRecipes.filter(
+        (id) => id !== req.body.recipeId
+      );
+      res.json({ result: true, favRecipes: updatedFavRecipes });
+    });
+  });
+});
+
+// Route pour récupérer toutes les recettes favorites d'un utilisateur
+router.get("/bookmarks/:token", (req, res) => {
+  User.findOne({ token: req.params.token }).then((user) => {
+    if (!user) {
+      res.json({ result: false, error: "User not found" });
+      return;
+    }
+
+    // Si l'utilisateur n'a pas de favoris, retourner un tableau vide
+    if (!user.favRecipes.length) {
+      res.json({ result: true, bookmarks: [] });
+      return;
+    }
+
+    // Récupérer toutes les recettes favorites
+    const { Recipe } = require("../models/recipes");
+    Recipe.find({ _id: { $in: user.favRecipes } })
+      .select("title description regime category averageNote voteNr difficulty duration cost")
+      .then((recipes) => {
+        res.json({ result: true, bookmarks: recipes });
+      })
+      .catch((error) => {
+        res.json({ result: false, error: error.message });
+      });
+  });
+});
+
+
+
 module.exports = router;

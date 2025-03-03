@@ -161,6 +161,84 @@ router.get("/bookmarks/:token", (req, res) => {
   });
 });
 
+router.post("/regimes", (req, res) => {
+  // Vérifier que tous les champs requis sont présents
+  if (!checkBody(req.body, ["token", "regime"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
 
+  User.findOne({ token: req.body.token }).then((user) => {
+    if (!user) {
+      res.json({ result: false, error: "User not found" });
+      return;
+    }
+
+    // Vérifier si le régime est déjà dans les favoris
+    if (user.regime.includes(req.body.regime)) {
+      res.json({ result: false, error: "Regime already in favorites" });
+      return;
+    }
+
+    User.updateOne(
+      { token: req.body.token },
+      { $push: { regime: req.body.regime } }
+    ).then(() => {
+      res.json({ result: true, regimes: [...user.regime, req.body.regime] });
+    });
+  });
+});
+
+// Route pour retirer un régime des favoris
+router.delete("/regimes", (req, res) => {
+  // Vérifier que tous les champs requis sont présents
+  if (!checkBody(req.body, ["token", "regime"])) {
+    res.json({ result: false, error: "Missing or empty fields" });
+    return;
+  }
+
+  // Rechercher l'utilisateur par son token
+  User.findOne({ token: req.body.token }).then((user) => {
+    if (!user) {
+      res.json({ result: false, error: "User not found" });
+      return;
+    }
+
+    // Vérifier si le régime est dans les favoris
+    if (!user.regime.includes(req.body.regime)) {
+      res.json({ result: false, error: "Regime not in regimes" });
+      return;
+    }
+
+    // Retirer le régime des favoris
+    User.updateOne(
+      { token: req.body.token },
+      { $pull: { regime: req.body.regime } }
+    ).then(() => {
+      const updatedregimes= user.regime.filter(
+        (id) => id !== req.body.regime
+      );
+      res.json({ result: true, regimes: updatedregimes });
+    });
+  });
+});
+
+// Route pour récupérer toutes les régimes favorites d'un utilisateur
+router.get("/regimes/:token", (req, res) => {
+  User.findOne({ token: req.params.token }).then((user) => {
+    if (!user) {
+      res.json({ result: false, error: "User not found" });
+      return;
+    }
+    // Si l'utilisateur n'a pas de regime, retourner un tableau vide
+    if (!user.regime.length) {
+      res.json({ result: true, regimes : [] });
+      return;
+    }
+    else {
+      res.json({result: true, regimes : user.regime})
+    }
+  });
+});
 
 module.exports = router;

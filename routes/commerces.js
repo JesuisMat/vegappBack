@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const IngredientCpf = require("../models/ingredientsCpf");
 const User = require("../models/users");
+const { checkBody } = require("../modules/checkBody");
 
 router.post("/ingredientsCpf", async (req, res) => {
   try {

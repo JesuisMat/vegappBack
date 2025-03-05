@@ -1,36 +1,33 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
-const { Recipe } = require('../models/recipes');
+const { Recipe } = require("../models/recipes");
 
-router.get('/search', async (req, res) => {
+router.get("/search", async (req, res) => {
   try {
     // On crée un objet vide pour stocker nos critères de recherche
     let query = {};
-    
+
     // Si l'utilisateur a tapé quelque chose dans la barre de recherche
     // On cherche dans le titre ET la description (grâce à $or)
     // Le 'i' dans RegExp veut dire "insensible à la casse" (Case insensitive)
     if (req.query.keyword) {
-      const keyword = new RegExp(req.query.keyword, 'i');
-      query.$or = [
-        { title: keyword },
-        { description: keyword }
-      ];
+      const keyword = new RegExp(req.query.keyword, "i");
+      query.$or = [{ title: keyword }, { description: keyword }];
     }
     // Gestion des régimes alimentaires (Vegan, Végé, etc.)
     // On vérifie si c'est un tableau ou une seule valeur
     if (req.query.regime) {
       // Si c'est une string, on la met dans un tableau
       // Sinon on garde le tableau tel quel
-      const regimes = Array.isArray(req.query.regime) 
-        ? req.query.regime 
+      const regimes = Array.isArray(req.query.regime)
+        ? req.query.regime
         : [req.query.regime];
-      
+
       // $all permet de chercher tous les régimes demandés
       // Par exemple: une recette qui est à la fois Vegan ET Bio
       query.regime = { $all: regimes };
     }
-    
+
     // Filtre par tag de plats
     if (req.query.category) {
       query.category = req.query.category;
@@ -47,29 +44,30 @@ router.get('/search', async (req, res) => {
     const recipes = await Recipe.find(query)
       .skip(skip)
       .limit(limit)
-      .select('title description regime category averageNote voteNr difficulty duration cost');
+      .select(
+        "title description regime category averageNote voteNr difficulty duration cost"
+      );
 
     // On compte le nombre total de recettes qui correspondent à la recherche
     // pour pouvoir calculer le nombre total de pages
     const total = await Recipe.countDocuments(query);
 
-    res.json({ 
-      result: true, 
+    res.json({
+      result: true,
       recipes,
       pagination: {
-        current: page,           //nb total de pages
+        current: page, //nb total de pages
         pages: Math.ceil(total / limit), //Nb total de pages
-        total                   // Nb total de recettes
-      }
+        total, // Nb total de recettes
+      },
     });
-
   } catch (error) {
     // erreur quon renvoi au front
     res.json({ result: false, error: error.message });
   }
 });
 
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     console.log('Received recipe data:', req.body);
 
@@ -112,13 +110,15 @@ router.post('/', async (req, res) => {
 });
 
 // GET /recipes - Récupération de toutes les recettes
-router.get('/allRecipes', async (req, res) => {
+router.get("/allRecipes", async (req, res) => {
   try {
     // On peut ajouter une limite pour ne pas tout récupérer d'un coup
     const recipes = await Recipe.find()
       .limit(20)
-      .select('title description regime category averageNote voteNr difficulty duration cost steps');
-    
+      .select(
+        "title description regime category averageNote voteNr difficulty duration cost steps"
+      );
+
     res.json({ result: true, recipes });
   } catch (error) {
     res.json({ result: false, error: error.message });
@@ -126,14 +126,14 @@ router.get('/allRecipes', async (req, res) => {
 });
 
 // GET /recipes/:id - Récupération d'une recette par son ID
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
-    
+
     if (recipe) {
       res.json({ result: true, recipe });
     } else {
-      res.json({ result: false, error: 'Recipe not found' });
+      res.json({ result: false, error: "Recipe not found" });
     }
   } catch (error) {
     res.json({ result: false, error: error.message });
@@ -141,7 +141,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // PUT /recipes/:id - Mise à jour d'une recette
-router.put('/:id', async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     // findByIdAndUpdate prend l'ID, les nouvelles données et les options
     const updatedRecipe = await Recipe.findByIdAndUpdate(
@@ -165,7 +165,7 @@ router.put('/:id', async (req, res) => {
     if (updatedRecipe) {
       res.json({ result: true, recipe: updatedRecipe });
     } else {
-      res.json({ result: false, error: 'Recipe not found' });
+      res.json({ result: false, error: "Recipe not found" });
     }
   } catch (error) {
     res.json({ result: false, error: error.message });
@@ -173,14 +173,14 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /recipes/:id - Suppression d'une recette
-router.delete('/:id', async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const deletedRecipe = await Recipe.findByIdAndDelete(req.params.id);
-    
+
     if (deletedRecipe) {
-      res.json({ result: true, message: 'Recipe deleted successfully' });
+      res.json({ result: true, message: "Recipe deleted successfully" });
     } else {
-      res.json({ result: false, error: 'Recipe not found' });
+      res.json({ result: false, error: "Recipe not found" });
     }
   } catch (error) {
     res.json({ result: false, error: error.message });
@@ -188,24 +188,25 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /recipes/:id/vote - Route pour voter/noter une recette
-router.post('/:id/vote', async (req, res) => {
+router.post("/:id/vote", async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
-    
+
     if (!recipe) {
-      return res.json({ result: false, error: 'Recipe not found' });
+      return res.json({ result: false, error: "Recipe not found" });
     }
 
     // Calcul de la nouvelle moyenne
     const newVoteNr = recipe.voteNr + 1;
-    const newAverageNote = (recipe.averageNote * recipe.voteNr + req.body.note) / newVoteNr;
+    const newAverageNote =
+      (recipe.averageNote * recipe.voteNr + req.body.note) / newVoteNr;
 
     // Mise à jour de la recette
     const updatedRecipe = await Recipe.findByIdAndUpdate(
       req.params.id,
       {
         averageNote: newAverageNote,
-        voteNr: newVoteNr
+        voteNr: newVoteNr,
       },
       { new: true }
     );
